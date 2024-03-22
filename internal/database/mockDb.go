@@ -11,3 +11,17 @@ func Init() {
 func GetAllAlbums() []models.Album {
 	return albums
 }
+
+func AppendNewAlbum(newAlbum *models.Album) {
+	albums = append(albums, *newAlbum)
+}
+
+func GetSpecificAlbum(id string) *models.Album {
+	for _, a := range albums {
+		if a.ID == id {
+			aCopy := a
+			return &aCopy
+		}
+	}
+	return nil
+}
