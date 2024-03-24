@@ -6,13 +6,19 @@ import (
 
 	"github.com/abhishekghosh-in/web-service-gin/api/handler"
 	"github.com/abhishekghosh-in/web-service-gin/internal/database"
+	"github.com/abhishekghosh-in/web-service-gin/internal/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Loading environment variables.
+	godotenv.Load(".env")
 	// Initializing in-memory mock database.
 	database.Init()
 
+	mongoDbURI := utils.EnvVarOrFallback("MONGODB_URI", "mongodb://localhost:27017")
+	_ = mongoDbURI
 	// Configuring router.
 	router := gin.Default()
 	router.GET("/", func(c *gin.Context) {
