@@ -8,31 +8,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ReturnGetAlbumsHandler() func(*gin.Context) {
+var dbConnection *database.DbConn
+
+func ReturnGetAlbumsHandler(dbConn *database.DbConn) func(*gin.Context) {
+	dbConnection = dbConn
 	return getAlbums
 }
 
-func ReturnGetAlbumByIDHandler() func(*gin.Context) {
+func ReturnGetAlbumByIDHandler(dbConn *database.DbConn) func(*gin.Context) {
+	dbConnection = dbConn
 	return getAlbumByID
 }
 
-func ReturnPostAlbumsHandler() func(*gin.Context) {
+func ReturnPostAlbumsHandler(dbConn *database.DbConn) func(*gin.Context) {
+	dbConnection = dbConn
 	return postAlbums
 }
 
 // GetAlbums responds with the list of all albums as JSON.
 func getAlbums(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, database.GetAllAlbums())
+	albums, err := dbConnection.GetAllAlbums()
+	if err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
+		return
+	}
+	c.IndentedJSON(http.StatusOK, albums)
 }
 
 // getAlbumByID locates the album whose ID value matches the id
 // parameter sent by the client, then returns that album as a response.
 func getAlbumByID(c *gin.Context) {
 	id := c.Param("id")
-	var album *models.Album = database.GetSpecificAlbum(id)
-	if album == nil {
+	album, err := dbConnection.GetSpecificAlbum(id)
+	if err != nil {
 		// Album not found in database with the given ID.
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "album not found"})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
 	}
 	c.IndentedJSON(http.StatusOK, *album)
@@ -41,15 +51,13 @@ func getAlbumByID(c *gin.Context) {
 // PostAlbums adds an album from JSON received in the request body.
 func postAlbums(c *gin.Context) {
 	var newAlbum models.Album
-
 	// Call BindJSON to bind the received JSON to newAlbum.
 	if err := c.BindJSON(&newAlbum); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "request body not matching with album configuration."})
 		return
 	}
 
-	// Add the new album to the slice.
-	database.AppendNewAlbum(&newAlbum)
+	dbConnection.AppendNewAlbum(&newAlbum)
 	// Adding it to the response body.
 	c.IndentedJSON(http.StatusCreated, newAlbum)
 }
